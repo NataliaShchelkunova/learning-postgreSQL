@@ -35,11 +35,14 @@ exports.findOne = (req, res) => {
 };
 
 exports.updateOne = (req, res) => {
-  const { body, id = body.id } = req;
+  const { body, query } = req;
+  const id = query.id;
   if (id) {
-    Tutorial.update(body, { where: { id: body.id } }).then((result) => {
+    Tutorial.update(body, { where: { id } }).then((result) => {
       if (result == 1) {
-        Tutorial.findAll()
+        Tutorial.findAll({
+          order: ["id"],
+        })
           .then((resultAll) => {
             res.send(resultAll);
           })
