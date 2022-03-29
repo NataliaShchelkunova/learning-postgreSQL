@@ -5,7 +5,6 @@ const Tutorial = db.tutorial;
 exports.create = (req, res) => {
   const { title, description, published } = req.body;
   if (title && description && published) {
-    console.log(title);
     const tutorial = {
       title,
       description,
@@ -22,7 +21,9 @@ exports.create = (req, res) => {
 };
 
 exports.findAll = (req, res) => {
-  Tutorial.findAll().then((result) => {
+  Tutorial.findAll({
+    order: ["id"],
+  }).then((result) => {
     res.send(result);
   });
 };
@@ -37,26 +38,31 @@ exports.findOne = (req, res) => {
 exports.updateOne = (req, res) => {
   const { body, query } = req;
   const id = query.id;
-  if (id) {
-    Tutorial.update(body, { where: { id } }).then((result) => {
-      if (result == 1) {
-        Tutorial.findAll({
-          order: ["id"],
-        })
-          .then((resultAll) => {
+  if (
+    id &&
+    (body.hasOwnProperty("title") ||
+      body.hasOwnProperty("description") ||
+      body.hasOwnProperty("published"))
+  ) {
+    Tutorial.update(body, { where: { id } })
+      .then((result) => {
+        if (result == 1) {
+          Tutorial.findAll({
+            order: ["id"],
+          }).then((resultAll) => {
             res.send(resultAll);
-          })
-          .catch((err) => {
-            res.send({
-              message: `tutorial id=${id} update was failing.`,
-            });
           });
-      } else {
+        } else {
+          res.send({
+            message: `id=${id} not found in database. Check if id is correct`,
+          });
+        }
+      })
+      .catch(() => {
         res.send({
-          message: `id=${id} not found in database. Check if id is correct`,
+          message: `tutorial id=${id} update was failing.`,
         });
-      }
-    });
+      });
   } else {
     res.send({
       message: `id=${id} is empty.`,
@@ -67,23 +73,25 @@ exports.updateOne = (req, res) => {
 exports.deleteOne = (req, res) => {
   const { id } = req.params;
   if (id) {
-    Tutorial.destroy({ where: { id: id } }).then((resultDelete) => {
-      if (resultDelete == 1) {
-        Tutorial.findAll()
-          .then((result) => {
+    Tutorial.destroy({ where: { id } })
+      .then((resultDelete) => {
+        if (resultDelete == 1) {
+          Tutorial.findAll({
+            order: ["id"],
+          }).then((result) => {
             res.send(result);
-          })
-          .catch((error) => {
-            res.send({
-              message: `tutorial id=${id} delete was failing.`,
-            });
           });
-      } else {
+        } else {
+          res.send({
+            message: `id=${id} not found in database. Check if id is correct`,
+          });
+        }
+      })
+      .catch(() => {
         res.send({
-          message: `id=${id} not found in database. Check if id is correct`,
+          message: `tutorial id=${id} delete was failing.`,
         });
-      }
-    });
+      });
   } else {
     res.send({
       message: `id=${id} is empty.`,
